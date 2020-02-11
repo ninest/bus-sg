@@ -38,7 +38,10 @@ class Bus:
         for line in soup.find_all("div", {"class": "bus_stop_code"},):
           try:
             bus_stop_code = int(line.text)
-            service_stops.append(bus_stop_code)
+            str_bus_stop_code = str(bus_stop_code)
+            if len(str_bus_stop_code) == 4:
+              str_bus_stop_code = "0" + str_bus_stop_code
+            service_stops.append(str_bus_stop_code)
           except:
             pass      
         stops[service] = service_stops
