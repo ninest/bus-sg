@@ -1,11 +1,11 @@
-# Singapore Bus Routes
+# :bus: Singapore Bus Routes
 > Getting a list of all bus stops and services
 
-## What's going on?
+## :exclamation: What's this?
 - coming soon
 
-## Data sources
+## :bookmark_tabs: Data sources
 - coming soon
 
-## How do I use this?
+## :question: How do I use this?
 - coming soon
