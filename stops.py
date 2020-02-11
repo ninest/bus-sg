@@ -8,7 +8,6 @@ headers = {
   'Accept': 'application/json',
   'AccountKey': API_KEY
 }
-
 stops_list = []
 stops_dict = {}
 
