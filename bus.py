@@ -50,7 +50,7 @@ class Bus:
       
       return services_list
   
-  def get_stops_for_each_service(self, services_list):
+  def get_stops_for_each_service(self, services_list) -> dict:
     """ Long name, but it's descriptive. SELF-DOCUMENTING CODE! """
     """
       Getting a list of routes for each bus service (in order)
@@ -109,6 +109,12 @@ class Bus:
     
     return services_stops_dict
 
+  def get_all_stops(self) -> dict:
+    all_stops_dict = {}
+
+    # Use LTA API
+
+    return all_stops_dict
 
 # Bus().get_stops_for_each_service(["14", "222", "NR5"])
 # pprint(
