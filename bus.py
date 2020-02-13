@@ -44,6 +44,8 @@ class Bus:
             service_stops.append(str_bus_stop_code)
           except:
             pass      
+        
+        # In this array we have collected, the second element (service_stops[1]) is the LAST stop 
         stops[service] = service_stops
 
     return stops
@@ -70,3 +72,7 @@ class Bus:
     return stops_dict
 
 
+# s =  Bus().get_services()
+
+s_stops = Bus().get_service_stops([2,3])
+print(s_stops)

@@ -27,7 +27,13 @@ We want to:
 
 Steps:
 (1) Load both the json files as dictionaries
+(2) Loop through the bus services (services.stops.keys())
+(3) Loop through each of the stations codes of the bus services (see services_stops.json)
+(4) Edit the stops dictionary, and append the bus service in the "bus_services" list
 
+It is more than likely that the same bus will be added to a stop multiple times (eg: Both 14 and 16 go to Bedok Interchange).
+
+Therefore we must check if the bus stop has ALREADY been added to the bus_services list (if statement used).
 """
 import json
 from pprint import pprint
@@ -38,17 +44,19 @@ services_stops = read_file('services_stops')
 stops_dict = read_file('stops_dict')
 
 for bus_service in services_stops.keys():
-  for stop_codes in services_stops[bus_service]:
+  for stop_code in services_stops[bus_service]:
     
-    # new key
     try: 
-      if bus_service in stops_dict[stop_codes]['bus_services']:
-        pass
+      # only add the bus service if it hasn't already been added
+      if not bus_service in stops_dict[stop_code]['bus_services']:
+        stops_dict[stop_code]['bus_services'].append(bus_service)
       else:
-        stops_dict[stop_codes]['bus_services'].append(bus_service)
+        print('ALREADY THERE')
+        print(bus_service)
+        print(stop_code)
+        print()
     except:
-      stops_dict[stop_codes]['bus_services'] = [bus_service]
-    # try: print(stops_dict[stop_codes])
-    # except: print(stops_dict["0" + stop_codes])
+      # new key being created if it doesn't exist
+      stops_dict[stop_code]['bus_services'] = [bus_service]
 
 pprint(stops_dict)
