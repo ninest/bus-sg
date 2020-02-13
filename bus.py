@@ -9,70 +9,111 @@ from keys import API_KEY
 
 
 class Bus:
+  """
+  Service: 
+  A bus service, identified by it's number. 14, 16, 222, 137 are all bus services.
+
+  Stop: 
+  A bus stop
+    - Stop code (or just code): A bus stop's 6-digit code. 
+    - Stop name: A bus stop's name
+    - Stop road?: The road on which a stop is
+
+  Route:
+  The list of stops a bus takes
+
+  All services and stops will be in the string format here so it can be used as the key in JSON/dictionary.
+  """
+
   def __init__(self):
-    self.headers = headers = {
-      'Accept': 'application/json',
-      'AccountKey': API_KEY
-    }
+    # self.headers = 
+    pass
 
   def get_services(self) -> list:
-    r = requests.get('https://www.mytransport.sg/content/mytransport/map.html')
-    if r.status_code == 200:
-      bus_services = []
+    """ Get a list of bus services and return a list: ["2", "3", "4", "4a", ...] """
 
+    r = requests.get('https://landtransportguru.net/bus/bus-services/')
+    if r.status_code == 200:
       soup = BeautifulSoup(r.content, 'lxml')
-      options = soup.find(id='busservice_option')
-      for optgroup in options.find_all('optgroup'):
-        for option in optgroup.find_all('option'):
-          bus_services.append(option.text)
-      return bus_services
+
+      services_list = []
+      
+      for service_soup in soup.find_all("div", class_='vrouterow'):
+        service = service_soup.find("span", class_='vnumber').text
+        
+        # These are not bus stops, they are just the general starting and ending areas
+        # starting_point = service_soup.find("span", class_='vdest1').text
+        # ending_point = service_soup.find("span", class_='vdest1').text
+        # Not sure if we should use them yet
+
+        services_list.append(service)
+      
+      return services_list
   
-  def get_service_stops(self, bus_services) -> dict:
-    stops = {}
-    for service in tqdm(bus_services):
-      r = requests.get(f'https://www.mytransport.sg/content/mytransport/ajax_lib/map_ajaxlib.getBusRouteByServiceId.{service}.html', headers={'User-Agent': 'request'})
+  def get_stops_for_each_service(self, services_list):
+    """ Long name, but it's descriptive. SELF-DOCUMENTING CODE! """
+    """
+      Getting a list of routes for each bus service (in order)
+        - each route will include only the stop_codes
+
+    """
+    # Test data: 14 (2 ways), 222 (loop), nr5 (1 way, not loop)
+
+    services_stops_dict = {}
+
+    for service in services_list:
+      r = requests.get(f'https://landtransportguru.net/bus{service}/')
       if r.status_code == 200:
-        service_stops = []
         soup = BeautifulSoup(r.content, 'lxml')
 
-        for line in soup.find_all("div", {"class": "bus_stop_code"},):
-          try:
-            bus_stop_code = int(line.text)
-            str_bus_stop_code = str(bus_stop_code)
-            if len(str_bus_stop_code) == 4:
-              str_bus_stop_code = "0" + str_bus_stop_code
-            service_stops.append(str_bus_stop_code)
-          except:
-            pass      
-        
-        # In this array we have collected, the second element (service_stops[1]) is the LAST stop 
-        stops[service] = service_stops
+        services_stops_dict[service] = {}
 
-    return stops
+        # initialize an empty array for the stops in the service
+        services_stops_dict[service]['routes'] = []
 
-  def get_stops(self) -> dict:
-    # stops_list = []
-    stops_dict = {}
+        # we can check if the bus service route is a loop (only 1 way) if the "RouteDesti" has "loop" in it
+        route_name = soup.find('div', class_='RouteDesti').text
+        if "loop" in route_name.lower():
+          loop = True  # loops are 222, 228
+        else: 
+          loop = False
+        services_stops_dict[service]['loop'] = loop
 
-    for i in tqdm(range(0,12)):
-      r = requests.get(f'http://datamall2.mytransport.sg/ltaodataservice/BusStops?$skip={500*i}', headers=self.headers)
-      if r.status_code == 200:
-        dic = json.loads(r.content)
-        
-        for stop in dic['value']:
-          stops_dict[stop['BusStopCode']] = {
-            'stop_code': stop['BusStopCode'],
-            'stop_name': stop['Description'],
-            'road_name': stop['RoadName'],
-            'coords': [stop['Latitude'],stop['Longitude']]
-          }
+        # loop through all routes (dir1, dir2)
+        # array 1 and 2 because each bus has a maximum of two routes
+        for dir_no, route_soup in zip([1,2], soup.find('div', class_='RouteContainer')):
 
-    # noOfStops = len(stops_dict.keys())
+          route = []
+          for stop_soup in route_soup.find_all('div', class_='NodeContainer'):
+            stop_code = stop_soup.find('div', class_='NodeID').text
+            # stop_name = stop_soup.find('div', 'NodeName').text
+            # stop_road = stop_soup.find('div', 'NodeRoadName').text
 
-    return stops_dict
+            route.append(stop_code)
+          
+          if loop == False:
+            # When it's NOT a loop, it's eaither
+            try: 
+              # (1) A bus with a 2 routes (like 14)
+              route_name = soup.find(id=f'navdir{dir_no}').text .split(':')[1]
+            except:
+              # (2) 1-way, no loop (like NR5)
+              route_name = soup.find('div', class_='RouteDesti').text
+          
+          services_stops_dict[service]['routes'].append({
+            'name': route_name,
+            'stops': route
+          })
 
 
-# s =  Bus().get_services()
+    
+    return services_stops_dict
 
-s_stops = Bus().get_service_stops([2,3])
-print(s_stops)
+
+# Bus().get_stops_for_each_service(["14", "222", "NR5"])
+# pprint(
+#   Bus().get_stops_for_each_service(["14", "222", "NR5"])
+# )
+pprint(
+  Bus().get_stops_for_each_service(["14",])
+)
