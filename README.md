@@ -9,9 +9,6 @@
     - [ ] NUS
     - [ ] NTU
 
-## :exclamation: What's this?
-- coming soon
-
 ## How it works
 Most of the magic happens in `bus.py`. This file contains the following important functions:
 
@@ -29,6 +26,13 @@ This function takes a list of services and returns all the routes as a dictionar
 
 All the bus stops and information about routes come from LTG.
 
+### Keys returned
+1. `loop`: True or False depending on if the bus route is a loop or not. For example, bus 222 and 228 have loop routes. (When `loop` is True, `type` is `'1'`)
+2. `routes`: A list of routes.
+   - `name`: The route's name.
+   - `stops`: A list of stops in the route 
+3. `type`: The route type. `'1'` if it's a 1-way route or loop route; `'2'` is it's a 2-way route. (Most services have 2-way routes)
+
 Example:
 ```
 get_stops_for_each_service(['14', '15']) => { 
@@ -41,7 +45,7 @@ get_stops_for_each_service(['14', '15']) => {
           '84009',
           '84359',
           ...
-        ]
+        ],
       },
       { 
         'name': 'Clementi Int → Bedok Int ⇋',
@@ -49,9 +53,10 @@ get_stops_for_each_service(['14', '15']) => {
           '17009',
           '17239',
           ...
-        ]
+        ],
       }
-    ]
+    ],
+    "type": '1'
   },
   { '15': { .. } }
 }
@@ -66,4 +71,4 @@ get_stops_for_each_service(['14', '15']) => {
 - [Land Transport Authority Datamall](https://www.mytransport.sg/content/mytransport/home/dataMall.html): LTA provides free APIs such as bus arrival timings, and taxi location.
 
 ## :question: How do I use this?
-- coming soon
+Download and use the files in the "output/data" directory. More details coming soon.

@@ -26,7 +26,7 @@ class Bus:
   """
 
   def __init__(self):
-    # self.headers = 
+    self.headers = headers = { 'Accept': 'application/json', 'AccountKey': API_KEY }
     pass
 
   def get_services(self) -> list:
@@ -75,9 +75,10 @@ class Bus:
         route_name = soup.find('div', class_='RouteDesti').text
         if "loop" in route_name.lower():
           loop = True  # loops are 222, 228
+          route_type = '1'  # route type are 1 or 2 (1 way/loop OR 2 way)
         else: 
           loop = False
-        services_stops_dict[service]['loop'] = loop
+          # route_type can be '1' or '2'
 
         # loop through all routes (dir1, dir2)
         # array 1 and 2 because each bus has a maximum of two routes
@@ -96,14 +97,19 @@ class Bus:
             try: 
               # (1) A bus with a 2 routes (like 14)
               route_name = soup.find(id=f'navdir{dir_no}').text .split(':')[1]
+              route_type = '2'
             except:
               # (2) 1-way, no loop (like NR5)
               route_name = soup.find('div', class_='RouteDesti').text
+              route_type = '1'
           
           services_stops_dict[service]['routes'].append({
             'name': route_name,
-            'stops': route
+            'stops': route,
           })
+        
+        services_stops_dict[service]['loop'] = loop
+        services_stops_dict[service]['type'] = route_type
 
 
     
@@ -113,6 +119,8 @@ class Bus:
     all_stops_dict = {}
 
     # Use LTA API
+    for i in tqdm(range(0,12)):
+      r = requests.get("http://datamall2.mytransport.sg/ltaodataservice/BusStops/", headers=headers)
 
     return all_stops_dict
 
@@ -121,5 +129,5 @@ class Bus:
 #   Bus().get_stops_for_each_service(["14", "222", "NR5"])
 # )
 pprint(
-  Bus().get_stops_for_each_service(["14",])
+  Bus().get_stops_for_each_service(["222",])
 )
