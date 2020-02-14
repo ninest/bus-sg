@@ -28,6 +28,7 @@ class Bus:
   def __init__(self):
     self.headers = { 'Accept': 'application/json', 'AccountKey': API_KEY }
 
+  
   def get_services(self) -> list:
     """ Get a list of bus services and return a list: ["2", "3", "4", "4a", ...] """
 
@@ -49,6 +50,7 @@ class Bus:
         services_list.append(service)
       
       return services_list
+  
   
   def get_stops_for_each_service(self, services_list) -> dict:
     """ Long name, but it's descriptive. SELF-DOCUMENTING CODE! """
@@ -122,6 +124,7 @@ class Bus:
 
     return services_stops_dict
 
+  
   def get_all_stops(self) -> dict:
     all_stops_dict = {}
 
@@ -153,6 +156,7 @@ class Bus:
 
     return all_stops_dict
 
+  
   def combine_stops_and_services(self, services_stops_dict, all_stops_dict) -> dict:
     """
     example data
@@ -165,15 +169,51 @@ class Bus:
       routes = services_stops_dict[service]['routes']
       for route in routes:
         for stop in route['stops']:
-          # we have the `stop`, so now add this bus service to the stop's 'services' list through the key 'services
-          # print(all_stops[stop])
-          try:
-            # Don't want to add doubles
-            if not service in all_stops[stop]['services']:
-              all_stops_dict[stop]['services'].append(service)
-          
-          except:
-            all_stops_dict[stop]['services'] = [service]
-    
-    return all_stops_dict
 
+          if stop in all_stops_dict.keys():
+            # one of the stops seems to be null, so add this for safety
+
+            # we have the `stop`, so now add this bus service to the stop's 'services' list through the key 'services
+            # print(all_stops[stop])
+            try:
+              # Don't want to add doubles
+              if not service in all_stops_dict[stop]['services']:
+                all_stops_dict[stop]['services'].append(service)
+            
+            except:
+              all_stops_dict[stop]['services'] = [service]
+
+    combined_stops_and_services_dict = all_stops_dict
+    return combined_stops_and_services_dict
+
+  
+  def add_mrt_data(self, combined_stops_and_services_dict, mrt_stations) -> dict:
+    """
+    (1) Go through all mrt_lines
+    (2) Go through each station
+      - scrape bus interchange if available (on LTG) – this requires a little extra work, possibly some string operations :/
+      - scrape other bus codes
+      DONE IN MRT.py
+    """
+
+    all_bus_stops = combined_stops_and_services_dict  # to make it easier to read
+
+    for station in mrt_stations.keys():
+      # sorting it so we can do some checking and make sure doubles are not added
+      station_refs = sorted(mrt_stations[station]['refs'])  
+
+      for bus_stop_code in mrt_stations[station]['bus_stops']:
+        try: 
+          # don't want to add doubles
+          if not station_refs in all_bus_stops[bus_stop_code]['mrt_stations']:
+            all_bus_stops[bus_stop_code]['mrt_stations'].append(station_refs)
+        except:
+          try: 
+            all_bus_stops[bus_stop_code]['mrt_stations'] = [station_refs]
+
+          except: 
+            # GHOST BUS STOP ERROR?
+            # 22579, 65211, 22579
+            print(f'Error with {bus_stop_code} at {station}')
+
+    return all_bus_stops
