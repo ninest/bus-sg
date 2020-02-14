@@ -17,7 +17,7 @@ class Bus:
   A bus stop
     - Stop code (or just code): A bus stop's 6-digit code. 
     - Stop name: A bus stop's name
-    - Stop road?: The road on which a stop is
+    - Stop road: The road on which a stop is
 
   Route:
   The list of stops a bus takes
@@ -26,8 +26,7 @@ class Bus:
   """
 
   def __init__(self):
-    self.headers = headers = { 'Accept': 'application/json', 'AccountKey': API_KEY }
-    pass
+    self.headers = { 'Accept': 'application/json', 'AccountKey': API_KEY }
 
   def get_services(self) -> list:
     """ Get a list of bus services and return a list: ["2", "3", "4", "4a", ...] """
@@ -38,7 +37,8 @@ class Bus:
 
       services_list = []
       
-      for service_soup in soup.find_all("div", class_='vrouterow'):
+      print('Getting all bus services (LTG):')
+      for service_soup in tqdm(soup.find_all("div", class_='vrouterow')):
         service = service_soup.find("span", class_='vnumber').text
         
         # These are not bus stops, they are just the general starting and ending areas
@@ -61,7 +61,8 @@ class Bus:
 
     services_stops_dict = {}
 
-    for service in services_list:
+    print('Getting all bus stops for each bus service (LTG):')
+    for service in tqdm(services_list):
       r = requests.get(f'https://landtransportguru.net/bus{service}/')
       if r.status_code == 200:
         soup = BeautifulSoup(r.content, 'lxml')
@@ -74,60 +75,105 @@ class Bus:
         # we can check if the bus service route is a loop (only 1 way) if the "RouteDesti" has "loop" in it
         route_name = soup.find('div', class_='RouteDesti').text
         if "loop" in route_name.lower():
-          loop = True  # loops are 222, 228
-          route_type = '1'  # route type are 1 or 2 (1 way/loop OR 2 way)
+          route_type = '0'  # route type are 0 or 1 or 2 (loop, 1 way OR 2 way)
+          dirs = [1]
         else: 
-          loop = False
-          # route_type can be '1' or '2'
+          # route name has to be set differently
+          # route type can be '1' or '2'
+          # dirs can be [1] or [1,2]
 
-        # loop through all routes (dir1, dir2)
-        # array 1 and 2 because each bus has a maximum of two routes
-        for dir_no, route_soup in zip([1,2], soup.find('div', class_='RouteContainer')):
+          # check if the navswitch button exists
+          if soup.find(id='navswitch2'):
+            route_type = '2'
+            dirs = [1,2]
+          else:
+            # navswitch does NOT exist, so it's 1-way
+            route_type = '1'
+            dirs = [1]
 
-          route = []
-          for stop_soup in route_soup.find_all('div', class_='NodeContainer'):
-            stop_code = stop_soup.find('div', class_='NodeID').text
-            # stop_name = stop_soup.find('div', 'NodeName').text
-            # stop_road = stop_soup.find('div', 'NodeRoadName').text
+          # also need to change the name accordingly
+          # this will be done in the loop
 
+        for dir_no in dirs:
+          dir_soup = soup.find(id=f'dir{dir_no}')
+          stop_soup = dir_soup.find_all(class_='NodeContainer')
+          
+          route = []  # contains a list of stop codes
+
+          for stop in stop_soup:
+            stop_code = stop.find(class_='NodeID').text
             route.append(stop_code)
+
           
-          if loop == False:
-            # When it's NOT a loop, it's eaither
-            try: 
-              # (1) A bus with a 2 routes (like 14)
-              route_name = soup.find(id=f'navdir{dir_no}').text .split(':')[1]
-              route_type = '2'
-            except:
-              # (2) 1-way, no loop (like NR5)
-              route_name = soup.find('div', class_='RouteDesti').text
-              route_type = '1'
-          
+          # fix the route name when there are 2 dirs
+          if dirs == [1,2]: 
+            # Getting the text on the right of "Direction X:"
+            route_name = soup.find(id=f'navdir{dir_no}').text .split(':')[1]
+
+            # remove the last 2 chars (" ⇋")
+            route_name = route_name[0:-2]
+
           services_stops_dict[service]['routes'].append({
             'name': route_name,
-            'stops': route,
+            'stops': route
           })
-        
-        services_stops_dict[service]['loop'] = loop
+
         services_stops_dict[service]['type'] = route_type
 
-
-    
     return services_stops_dict
 
   def get_all_stops(self) -> dict:
     all_stops_dict = {}
 
     # Use LTA API
-    for i in tqdm(range(0,12)):
-      r = requests.get("http://datamall2.mytransport.sg/ltaodataservice/BusStops/", headers=headers)
+    print('Getting all bus stop data (LTA):')
+    for i in tqdm(range(0,11)):
+      r = requests.get(f"http://datamall2.mytransport.sg/ltaodataservice/BusStops?$skip={i*500}", headers=self.headers)
+      if r.status_code == 200:
+        stop_list = json.loads(r.content)['value']  # this does not contain ALL stops, just 500
+
+        for stop_dict in stop_list:
+          stop_code = stop_dict['BusStopCode']
+          stop_road = stop_dict['RoadName']
+          stop_name = stop_dict['Description']
+          stop_coords = {
+            'lat': stop_dict['Latitude'],
+            'lon': stop_dict['Longitude'],
+          }
+
+          all_stops_dict[stop_code] = {
+            'code': stop_code,
+            'name': stop_name,
+            'road': stop_road,
+            'coords': stop_coords
+          }
+
+    print('Number of bus stops: ')
+    print(len(all_stops_dict.keys()))
 
     return all_stops_dict
 
-# Bus().get_stops_for_each_service(["14", "222", "NR5"])
-# pprint(
-#   Bus().get_stops_for_each_service(["14", "222", "NR5"])
-# )
-pprint(
-  Bus().get_stops_for_each_service(["222",])
-)
+  def combine_stops_and_services(self, services_stops_dict, all_stops_dict) -> dict:
+    """
+    example data
+    services_stops_dict = {'14': {'routes': [{'name': ' Bedok Int → Clementi Int ⇋', 'stops': ['84009', '84359', '84211', '84221', '84231', '84241', '84281', '84061', '85091', '85049', '85039', '85029', '85019', '94079', '94069', '94059', '94049', '94089', '94039', '94029', '94019', '93099', '93089', '93079', '93069', '93059', '92159', '92149', '92139', '92129', '92119', '92109', '92099', '91079', '91069', '91059', '91049', '91091', '80271', '80141', '80219', '80169', '80159', '04111', '04121', '08041', '08031', '08111', '08121', '09059', '09022', '13199', '13159', '13069', '13059', '10519', '10389', '10379', '10081', '10091', '10101', '10111', '10131', '11519', '18041', '18131', '18101', '18121', '18141', '11361', '11191', '19011', '19021', '19031', '19041', '17151', '17161', '17171', '17009']}, {'name': ' Clementi Int → Bedok Int ⇋', 'stops': ['17009', '17239', '17159', '19049', '19039', '19029', '19019', '11199', '11369', '18149', '18129', '18109', '18049', '11511', '11019', '10139', '10119', '10109', '10099', '10089', '10371', '10381', '13051', '13063', '13141', '13191', '09048', '09038', '08138', '08057', '08069', '04179', '02049', '80151', '80161', '80211', '80149', '80279', '91099', '91041', '91051', '91061', '91071', '92091', '92101', '92111', '92121', '92131', '92141', '92151', '93051', '93061', '93071', '93081', '93091', '94011', '94021', '94031', '94041', '94051', '94061', '94071', '85021', '85031', '85041', '85099', '84069', '84289', '84249', '84239', '84229', '84219', '84351', '84009']}], 'loop': False, 'type': '2'}, '222': {'routes': [{'name': 'Bedok Int ↺ Chai Chee Dr (Loop)', 'stops': ['84009', '84359', '84211', '84221', '84231', '84241', '84281', '84059', '84049', '84039', '84029', '84641', '84559', '84569', '84579', '84589', '84011', '84021', '84031', '84041', '84051', '84289', '84249', '84239', '84229', '84219', '84351', '84009']}], 'loop': True, 'type': '1'}}
+    {'14': {'routes': [['stop': [1,2,3]],[['stop': [4,5,6]]]}}
+    all_stops = {'01012': {'code': '01012', 'name': 'Hotel Grand Pacific', 'road': 'Victoria St', 'coords': {'lat': 1.29684825487647, 'lon': 103.85253591654006}}, '01013': {'code': '01013', 'name': "St. Joseph's Ch", 'road': 'Victoria St', 'coords': {'lat': 1.29770970610083, 'lon': 103.8532247463225}},}
+    """
+
+    for service in services_stops_dict.keys():
+      routes = services_stops_dict[service]['routes']
+      for route in routes:
+        for stop in route['stops']:
+          # we have the `stop`, so now add this bus service to the stop's 'services' list through the key 'services
+          # print(all_stops[stop])
+          try:
+            # Don't want to add doubles
+            if not service in all_stops[stop]['services']:
+              all_stops_dict[stop]['services'].append(service)
+          
+          except:
+            all_stops_dict[stop]['services'] = [service]
+    
+    return all_stops_dict
+

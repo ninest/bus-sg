@@ -16,28 +16,32 @@ Most of the magic happens in `bus.py`. This file contains the following importan
 2. `get_stops_for_each_service`
 3. `get_all_stops`
 
-### `get_services`
+### 1. `get_services`
 This function scrapes [LTG](https://landtransportguru.net/bus/bus-services/) and returns a list of all bus services.
 
 Nothing complex.
 
-### `get_stops_for_each_service`
+### 2. `get_stops_for_each_service`
 This function takes a list of services and returns all the routes as a dictionary/object.
 
 All the bus stops and information about routes come from LTG.
 
-### Keys returned
+#### Keys returned
 1. `loop`: True or False depending on if the bus route is a loop or not. For example, bus 222 and 228 have loop routes. (When `loop` is True, `type` is `'1'`)
 2. `routes`: A list of routes.
    - `name`: The route's name.
    - `stops`: A list of stops in the route 
-3. `type`: The route type. `'1'` if it's a 1-way route or loop route; `'2'` is it's a 2-way route. (Most services have 2-way routes)
+3. `type`: The route type. `'0'` if it's a loop; `'1'` if it's a 1-way route; and `'2'` is it's a 2-way route. (Most services have 2-way routes)
+
+More data will be added soon:
+- MRT stations connections
+- Route length  
+- ...
 
 Example:
 ```
 get_stops_for_each_service(['14', '15']) => { 
   '14': { 
-    'loop': False,
     'routes': [ 
       { 
         'name': 'Bedok Int → Clementi Int ⇋',
@@ -62,8 +66,25 @@ get_stops_for_each_service(['14', '15']) => {
 }
 ```
 
-### `get_all_stops`
-- coming soon
+### 3. `get_all_stops`
+This function makes use of LTA's DataMall API for Bus Stops. I thought I could do without LTA's API for bus stops, but it's the only source for the longitude and latitude (coordinates) of the bus stops.
+
+#### Keys returned
+1. `code`
+2. `name`
+3. `road`
+4. `coords`
+
+**TODO:** Find MRT stations (if any). This may require a separate function.
+
+### 4. `combine_stops_and_services`
+This function takes in 2 parameters:
+1. `services_stops_dict`: The output of `get_stops_for_each_service` (function 2).
+2. `all_stops_dict`: The output of `get_all_stops` (function 3).
+
+`services_stops_dict` has a structure of bus service to routes (see example above).
+
+`all_stops_dict` is a dictionary of all bus stops with the key being the bus stop code.
 
 
 ## :bookmark_tabs: Data sources
