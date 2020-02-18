@@ -15,7 +15,8 @@ class MRT:
   """
 
   def __init__(self):
-    self.lines = ['ns', 'ew', 'ne', 'cc', 'dt', 'te', 'jr', 'cr']  # add LRT later
+    self.lines = ['ns', 'ew', 'ne', 'cc', 'dt']  # add LRT later
+    self.future_lines = ['te', 'jr', 'cr']  # same data for these incomplete so adding them
     # self.lines = ['ew']
 
   

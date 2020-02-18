@@ -11,6 +11,8 @@
   - [ ] NUS
   - [ ] NTU
 
+To add college bus stops, we will have to add all shuttles. However, some bus stops don't have codes, so we'll have to think of ways to create IDs. One idea: Internal buses can be "N" followed by 4 digits (ex: First stop is N0001). Similary, premium stops with no IDs can be of the format PXXXX.
+
 ## Getting the data
 Most of the magic happens in `bus.py`. This file contains the following important functions:
 
@@ -148,3 +150,6 @@ I'd also like to add [cheeaun/busrouter-sg](https://github.com/cheeaun/busrouter
 
 ## :question: How do I use this?
 See the files in the "output/data" directory. More details coming soon.
+
+## Known issues
+1. Some stations in the stations list on LTS don't have all stations refs complete. For example, see Marina Bay Financial (a bus stop). The TE line is mentioned even though it is not on the main list, causing duplicates.
