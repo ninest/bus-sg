@@ -43,7 +43,20 @@ class MRT:
 
             # finding the mrt station code (ex: ew5)
             refs_soup = station_soup.find_all(class_='mrt')
-            station_refs = [each_ref_soup.text.lower() for each_ref_soup in refs_soup]  # lower case for consistency
+            
+            station_refs = []
+            for each_ref_soup in refs_soup:
+              ref = each_ref_soup.text.lower().strip() # lower case for consistency, and remove trailing spaces
+              
+              # TODO: change this when the new MRT data is ready
+              # for now, while finding all station codes, don't add future lines
+              for line in self.future_lines:
+                if line in ref:
+                  break
+                else: 
+                  # make sure they're not added if already there
+                  if (not ref in station_refs):
+                    station_refs.append(ref)
 
             # get station name
             station_name = station_soup.find('a').text
@@ -117,4 +130,6 @@ class MRT:
       # return empty list if error
       return []
 
-
+# pprint(
+# MRT().get_stations()
+# )
