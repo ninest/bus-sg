@@ -1,6 +1,8 @@
 # :bus: Singapore Bus Routes
 > Getting a list of all bus stops and services
 
+[![forthebadge](https://forthebadge.com/images/badges/made-with-python.svg)](https://forthebadge.com)
+
 ## :school_satchel: Features
 - [x] List of all bus services and their respective routes and stops
   - [x] Bus service type (2-way, 1-way, or loop)
