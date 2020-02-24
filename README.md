@@ -120,6 +120,8 @@ There's one more function (`MRT.get_station_bus_stops`) to get the bus stops for
 
 This dictionary does store repeats.
 
+**NOTE:** As of now, future MRT stations abd lines have been removed (te, je, ...). This is because the LTG data is incomplete, so it's causing some repeats and dirty data.
+
 ### 6. `add_mrt_data`
 Add MRT data to `combined_stops_and_services_dict` (the dictionary returned from `combine_stops_and_services`, function 4).
 
