@@ -148,7 +148,8 @@ class Bus:
             'code': stop_code,
             'name': stop_name,
             'road': stop_road,
-            'coords': stop_coords
+            'coords': stop_coords,
+            'mrt_stations': []  # this will be populated later or left empty
           }
 
     print('Number of bus stops: ')
