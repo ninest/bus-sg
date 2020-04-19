@@ -1,5 +1,5 @@
 # :bus: Singapore Bus Routes
-> A project to get a list of bus stops, servies, and related data
+> A project to get a list of bus stops, servies, and related data for the app [NextBus SG](https://github.com/themindstorm/NextBusSG).
 
 [![forthebadge](https://forthebadge.com/images/badges/made-with-python.svg)](https://forthebadge.com)
 
