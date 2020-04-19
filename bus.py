@@ -26,39 +26,38 @@ class Bus:
   """
 
   def __init__(self):
-    self.headers = { 'Accept': 'application/json', 'AccountKey': API_KEY }
+    self.headers = {'Accept': 'application/json', 'AccountKey': API_KEY}
 
-  
   def get_services(self) -> list:
-    """ Get a list of bus services and return a list: ["2", "3", "4", "4a", ...] """
+    ''' Get a list of bus services and return a list: ["2", "3", "4", "4a", ...] '''
 
     r = requests.get('https://landtransportguru.net/bus/bus-services/')
     if r.status_code == 200:
       soup = BeautifulSoup(r.content, 'lxml')
 
       services_list = []
-      
+
       print('Getting all bus services (LTG):')
       for service_soup in tqdm(soup.find_all("div", class_='vrouterow')):
         service = service_soup.find("span", class_='vnumber').text
-        
+
         # These are not bus stops, they are just the general starting and ending areas
         # starting_point = service_soup.find("span", class_='vdest1').text
         # ending_point = service_soup.find("span", class_='vdest1').text
         # Not sure if we should use them yet
 
         services_list.append(service)
-      
+
       return services_list
-  
-  
+
   def get_stops_for_each_service(self, services_list) -> dict:
-    """ Long name, but it's descriptive. SELF-DOCUMENTING CODE! """
-    """
+    ''' Long name, but it's descriptive. SELF-DOCUMENTING CODE! '''
+    '''
       Getting a list of routes for each bus service (in order)
         - each route will include only the stop_codes
 
-    """
+      services_list is a list of strings: ['CT18', 'CT8', ..., '10', '10e', '11', '12', ...]
+    '''
     # Test data: 14 (2 ways), 222 (loop), nr5 (1 way, not loop)
 
     services_stops_dict = {}
@@ -79,7 +78,7 @@ class Bus:
         if "loop" in route_name.lower():
           route_type = '0'  # route type are 0 or 1 or 2 (loop, 1 way OR 2 way)
           dirs = [1]
-        else: 
+        else:
           # route name has to be set differently
           # route type can be '1' or '2'
           # dirs can be [1] or [1,2]
@@ -87,7 +86,7 @@ class Bus:
           # check if the navswitch button exists
           if soup.find(id='navswitch2'):
             route_type = '2'
-            dirs = [1,2]
+            dirs = [1, 2]
           else:
             # navswitch does NOT exist, so it's 1-way
             route_type = '1'
@@ -99,16 +98,15 @@ class Bus:
         for dir_no in dirs:
           dir_soup = soup.find(id=f'dir{dir_no}')
           stop_soup = dir_soup.find_all(class_='NodeContainer')
-          
+
           route = []  # contains a list of stop codes
 
           for stop in stop_soup:
             stop_code = stop.find(class_='NodeID').text
             route.append(stop_code)
 
-          
           # fix the route name when there are 2 dirs
-          if dirs == [1,2]: 
+          if dirs == [1, 2]:
             # Getting the text on the right of "Direction X:"
             route_name = soup.find(id=f'navdir{dir_no}').text .split(':')[1]
 
@@ -116,40 +114,41 @@ class Bus:
             route_name = route_name[0:-2]
 
           services_stops_dict[service]['routes'].append({
-            'name': route_name,
-            'stops': route
+              'name': route_name,
+              'stops': route
           })
 
         services_stops_dict[service]['type'] = route_type
 
     return services_stops_dict
 
-  
   def get_all_stops(self) -> dict:
     all_stops_dict = {}
 
     # Use LTA API
     print('Getting all bus stop data (LTA):')
-    for i in tqdm(range(0,11)):
-      r = requests.get(f"http://datamall2.mytransport.sg/ltaodataservice/BusStops?$skip={i*500}", headers=self.headers)
+    for i in tqdm(range(0, 11)):
+      r = requests.get(
+          f"http://datamall2.mytransport.sg/ltaodataservice/BusStops?$skip={i*500}", headers=self.headers)
       if r.status_code == 200:
-        stop_list = json.loads(r.content)['value']  # this does not contain ALL stops, just 500
+        # this does not contain ALL stops, just 500
+        stop_list = json.loads(r.content)['value']
 
         for stop_dict in stop_list:
           stop_code = stop_dict['BusStopCode']
           stop_road = stop_dict['RoadName']
           stop_name = stop_dict['Description']
           stop_coords = {
-            'lat': stop_dict['Latitude'],
-            'lon': stop_dict['Longitude'],
+              'lat': stop_dict['Latitude'],
+              'lon': stop_dict['Longitude'],
           }
 
           all_stops_dict[stop_code] = {
-            'code': stop_code,
-            'name': stop_name,
-            'road': stop_road,
-            'coords': stop_coords,
-            'mrt_stations': []  # this will be populated later or left empty
+              'code': stop_code,
+              'name': stop_name,
+              'road': stop_road,
+              'coords': stop_coords,
+              'mrt_stations': []  # this will be populated later or left empty
           }
 
     print('Number of bus stops: ')
@@ -157,7 +156,6 @@ class Bus:
 
     return all_stops_dict
 
-  
   def combine_stops_and_services(self, services_stops_dict, all_stops_dict) -> dict:
     """
     example data
@@ -180,14 +178,13 @@ class Bus:
               # Don't want to add doubles
               if not service in all_stops_dict[stop]['services']:
                 all_stops_dict[stop]['services'].append(service)
-            
+
             except:
               all_stops_dict[stop]['services'] = [service]
 
     combined_stops_and_services_dict = all_stops_dict
     return combined_stops_and_services_dict
 
-  
   def add_mrt_data(self, combined_stops_and_services_dict, mrt_stations) -> dict:
     """
     (1) Go through all mrt_lines
@@ -201,20 +198,21 @@ class Bus:
 
     for station in mrt_stations.keys():
       # sorting it so we can do some checking and make sure doubles are not added
-      station_refs = sorted(mrt_stations[station]['refs'])  
+      station_refs = sorted(mrt_stations[station]['refs'])
 
       for bus_stop_code in mrt_stations[station]['bus_stops']:
-        try: 
+        try:
           # don't want to add doubles
           if not station_refs in all_bus_stops[bus_stop_code]['mrt_stations']:
             all_bus_stops[bus_stop_code]['mrt_stations'].append(station_refs)
         except:
-          try: 
+          try:
             all_bus_stops[bus_stop_code]['mrt_stations'] = [station_refs]
 
-          except: 
+          except:
             # GHOST BUS STOP ERROR?
             # 22579, 65211, 22579
             print(f'Error with {bus_stop_code} at {station}')
 
     return all_bus_stops
+

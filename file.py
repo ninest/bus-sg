@@ -7,7 +7,7 @@ def write_file(data, folder, filename):
   # create directory if doesm't exist
   if not os.path.exists(f'output/{folder}'):
     os.makedirs(f'output/{folder}')
-    
+
   f = open(f'output/{folder}/{filename}.json', 'w')
   with f as outfile:
     json.dump(data, outfile)
@@ -15,7 +15,7 @@ def write_file(data, folder, filename):
 
 def read_file(folder, filename):
   f = open(f'output/{folder}/{filename}', 'r')
-  dictionary = json.loads( f.read() )
+  dictionary = json.loads(f.read())
   return dictionary
 
 
