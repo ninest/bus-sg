@@ -1,7 +1,12 @@
 # :bus: Singapore Bus Routes
 > A project to get a list of bus stops, servies, and related data for the app [NextBus SG](https://github.com/themindstorm/NextBusSG).
 
-[![forthebadge](https://forthebadge.com/images/badges/made-with-python.svg)](https://forthebadge.com)
+![Made with Flutter](https://img.shields.io/badge/Made%20With-%20Python%20🐍%20-red?style=flat-square)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
+![GitHub](https://img.shields.io/github/license/themindstorm/bus-sg?style=flat-square)
+[![used by](https://img.shields.io/badge/Used%20In-NextBus%20SG-3f51bf?style=flat-square)
+](https://github.com/themindstorm/NextBusSG)
+
 
 This data is used for the app [**NextBus SG**](https://github.com/themindstorm/NextBusSG).
 
@@ -11,7 +16,7 @@ This data is used for the app [**NextBus SG**](https://github.com/themindstorm/N
 - [x] List of all bus stops and metadata including name, road, coordinates, and respective buses
   - [ ] Exta metadata such as route length and route time/duration
 - [x] MRT stations for bus stops
-- [ ] College bus stops
+- [ ] College bus **stops**
   - [ ] NUS
   - [ ] NTU
 
