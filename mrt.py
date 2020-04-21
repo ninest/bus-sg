@@ -16,10 +16,10 @@ class MRT:
 
   def __init__(self):
     self.lines = ['ns', 'ew', 'ne', 'cc', 'dt']  # add LRT later
-    self.future_lines = ['te', 'jr', 'cr']  # same data for these incomplete so adding them
+    # same data for these incomplete so adding them
+    self.future_lines = ['te', 'jr', 'cr']
     # self.lines = ['ew']
 
-  
   def get_stations(self):
     """
     The keys in the stations dictionary will be the ref for that station in that line.
@@ -43,17 +43,18 @@ class MRT:
 
             # finding the mrt station code (ex: ew5)
             refs_soup = station_soup.find_all(class_='mrt')
-            
+
             station_refs = []
             for each_ref_soup in refs_soup:
-              ref = each_ref_soup.text.lower().strip() # lower case for consistency, and remove trailing spaces
-              
+              # lower case for consistency, and remove trailing spaces
+              ref = each_ref_soup.text.lower().strip()
+
               # TODO: change this when the new MRT data is ready
               # for now, while finding all station codes, don't add future lines
               for line in self.future_lines:
                 if line in ref:
                   break
-                else: 
+                else:
                   # make sure they're not added if already there
                   if (not ref in station_refs):
                     station_refs.append(ref)
@@ -65,13 +66,12 @@ class MRT:
             station_bus_stops = self.get_station_bus_stops(station_name)
 
             stations_dict[station_refs[0]] = {
-              'name': station_name,
-              'refs': station_refs,
-              'bus_stops': station_bus_stops
+                'name': station_name,
+                'refs': station_refs,
+                'bus_stops': station_bus_stops
             }
-    
-    return stations_dict
 
+    return stations_dict
 
   def get_station_bus_stops(self, station_name):
     # get the bus stop codes
@@ -81,7 +81,8 @@ class MRT:
 
     slugified_station_name = station_name.replace(' ', '-').lower()
 
-    r = requests.get(f'https://landtransportguru.net/{slugified_station_name}-station/')
+    r = requests.get(
+        f'https://landtransportguru.net/{slugified_station_name}-station/')
     if r.status_code == 200:
       soup = BeautifulSoup(r.content, 'lxml')
 
@@ -93,7 +94,7 @@ class MRT:
           # checking if the first 5 digits can be ints. If yes, they are the bus stop codes
           # just for safety, we'll also check that the "–" character is present
 
-          int(cell_soup.text[0:5])  
+          int(cell_soup.text[0:5])
 
           if "–" in cell_soup.text:
             stop_code = cell_soup.text[0:5]
@@ -111,10 +112,11 @@ class MRT:
         # (2) Find if interchange
         a_soup = cell_soup.find('a')
         if a_soup and "interchange" in a_soup.text .lower():
-          bus_stop_name = a_soup.text .lower() .replace("interchange", "int").replace(" bus", "").replace("temporary", "temp").replace("bukit", "bt")  # bukit is hortened to bt in bus stop names
+          bus_stop_name = a_soup.text .lower() .replace("interchange", "int").replace(" bus", "").replace(
+              "temporary", "temp").replace("bukit", "bt")  # bukit is hortened to bt in bus stop names
 
           # print(bus_stop_name)
-          
+
           # go through temporary/all_stops_dict.json (or combined) and find the code matching the name
           all_bus_stops_dict = read_file('temp/bus', 'all_stops_dict.json')
 
@@ -126,7 +128,7 @@ class MRT:
                 bus_stop_codes.append(stop_code)
 
       return bus_stop_codes
-    else: 
+    else:
       # return empty list if error
       return []
 
